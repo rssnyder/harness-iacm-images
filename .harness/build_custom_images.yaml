@@ -1,0 +1,144 @@
+pipeline:
+  name: build custom images
+  identifier: build_custom_images
+  projectIdentifier: iacm
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: custom images
+        identifier: custom_images
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: get defaults
+                  identifier: get_defaults
+                  spec:
+                    connectorRef: account.dockerhub
+                    image: curlimages/curl
+                    shell: Sh
+                    command: |-
+                      export RESULT=$(curl \
+                      -H 'x-api-key: <+secrets.getValue("account.api")>' \
+                      'https://app.harness.io/gateway/iacm-manager/execution-config/get-default-config?accountIdentifier=<+account.identifier>&infra=k8')
+                    outputVariables:
+                      - name: RESULT
+              - parallel:
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: ci-addon
+                      identifier: ci_addon
+                      spec:
+                        connectorRef: account.dockerhub
+                        repo: <+stage.variables.internal_repo>/ci-addon
+                        tags:
+                          - <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.addonTag.split(":")[1]>
+                          - latest
+                        buildArgs:
+                          SOURCE_IMAGE: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.addonTag.split(":")[0]>
+                          SOURCE_TAG: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.addonTag.split(":")[1]>
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: ci-lite-engine
+                      identifier: ci_lite_engine
+                      spec:
+                        connectorRef: account.dockerhub
+                        repo: <+stage.variables.internal_repo>/ci-lite-engine
+                        tags:
+                          - <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.liteEngineTag.split(":")[1]>
+                          - latest
+                        buildArgs:
+                          SOURCE_IMAGE: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.liteEngineTag.split(":")[0]>
+                          SOURCE_TAG: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.liteEngineTag.split(":")[1]>
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: drone-git
+                      identifier: drone_git
+                      spec:
+                        connectorRef: account.dockerhub
+                        repo: <+stage.variables.internal_repo>/drone-git
+                        tags:
+                          - <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.gitCloneTag.split(":")[1]>
+                          - latest
+                        buildArgs:
+                          SOURCE_IMAGE: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.gitCloneTag.split(":")[0]>
+                          SOURCE_TAG: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.gitCloneTag.split(":")[1]>
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: harness_terraform
+                      identifier: harness_terraform
+                      spec:
+                        connectorRef: account.dockerhub
+                        repo: <+stage.variables.internal_repo>/harness_terraform
+                        tags:
+                          - <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.iacmTerraform.split(":")[1]>
+                          - latest
+                        dockerfile: Dockerfile.harness_terraform
+                        buildArgs:
+                          SOURCE_IMAGE: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.iacmTerraform.split(":")[0]>
+                          SOURCE_TAG: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.iacmTerraform.split(":")[1]>
+              - step:
+                  type: Run
+                  name: update
+                  identifier: update
+                  spec:
+                    connectorRef: account.dockerhub
+                    image: curlimages/curl
+                    shell: Sh
+                    command: |-
+                      curl \
+                      -X POST \
+                      -H 'x-api-key: <+secrets.getValue("account.api")>' \
+                      'https://app.harness.io/gateway/iacm-manager/execution-config/update-config?accountIdentifier=<+account.identifier>&infra=k8' \
+                      --header 'Content-Type: application/json' \
+                      --data-binary @- << EOF
+                      [
+                          {
+                              "field": "addonTag",
+                              "value": "<+execution.steps.ci_addon.artifact_ci_addon.stepArtifacts.publishedImageArtifacts[0].imageName>:<+execution.steps.ci_addon.artifact_ci_addon.stepArtifacts.publishedImageArtifacts[0].tag>"
+                          },
+                          {
+                              "field": "liteEngineTag",
+                              "value": "<+execution.steps.ci_lite_engine.artifact_ci_lite_engine.stepArtifacts.publishedImageArtifacts[0].imageName>:<+execution.steps.ci_lite_engine.artifact_ci_lite_engine.stepArtifacts.publishedImageArtifacts[0].tag>"
+                          },
+                          {
+                              "field": "gitCloneTag",
+                              "value": "<+execution.steps.drone_git.artifact_drone_git.stepArtifacts.publishedImageArtifacts[0].imageName>:<+execution.steps.drone_git.artifact_drone_git.stepArtifacts.publishedImageArtifacts[0].tag>"
+                          },
+                          {
+                              "field": "IACMTerraformTag",
+                              "value": "<+execution.steps.harness_terraform.artifact_harness_terraform.stepArtifacts.publishedImageArtifacts[0].imageName>:<+execution.steps.harness_terraform.artifact_harness_terraform.stepArtifacts.publishedImageArtifacts[0].tag>"
+                          },
+                          {
+                              "field": "IACMOpentofuTag",
+                              "value": "<+execution.steps.harness_terraform.artifact_harness_terraform.stepArtifacts.publishedImageArtifacts[0].imageName>:<+execution.steps.harness_terraform.artifact_harness_terraform.stepArtifacts.publishedImageArtifacts[0].tag>"
+                          }
+                      ]
+                      EOF
+          caching:
+            enabled: false
+            paths: []
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+        variables:
+          - name: internal_repo
+            type: String
+            description: ""
+            required: false
+            value: rssnyder
+  properties:
+    ci:
+      codebase:
+        connectorRef: account.rssnyder
+        repoName: harness-iacm-images
+        build: <+input>
+        sparseCheckout: []
