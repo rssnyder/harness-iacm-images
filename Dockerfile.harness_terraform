@@ -1,0 +1,21 @@
+ARG SOURCE_IMAGE
+ARG SOURCE_TAG
+
+FROM $SOURCE_IMAGE:$SOURCE_TAG
+
+USER root
+
+# install aws cli
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+  && unzip -q awscliv2.zip \
+  && ./aws/install \
+  && aws --version
+
+# install aws iam authenticator
+RUN curl -Lo aws-iam-authenticator https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.9/aws-iam-authenticator_0.5.9_linux_amd64 \
+  && chmod +x ./aws-iam-authenticator \
+  && mv ./aws-iam-authenticator /usr/local/bin
+
+USER harness
+
+ENTRYPOINT ["/bin/harness-terraform"]
