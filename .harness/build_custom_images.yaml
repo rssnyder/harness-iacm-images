@@ -12,14 +12,6 @@ pipeline:
         type: CI
         spec:
           cloneCodebase: true
-          infrastructure:
-            type: KubernetesDirect
-            spec:
-              connectorRef: account._lab
-              namespace: iacm
-              automountServiceAccountToken: true
-              nodeSelector: {}
-              os: Linux
           execution:
             steps:
               - step:
@@ -49,6 +41,12 @@ pipeline:
                     buildArgs:
                       SOURCE_IMAGE: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.iacmTerraform.split(":")[0]>
                       SOURCE_TAG: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.iacmTerraform.split(":")[1]>
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
     - stage:
         name: test
         identifier: test
