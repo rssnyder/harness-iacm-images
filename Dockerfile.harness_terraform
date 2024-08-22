@@ -3,8 +3,6 @@ ARG SOURCE_TAG
 
 FROM $SOURCE_IMAGE:$SOURCE_TAG
 
-USER root
-
 # install aws cli
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
   && unzip -q awscliv2.zip \
@@ -25,7 +23,5 @@ gpgcheck=1 \n\
 gpgkey=https://packages.microsoft.com/keys/microsoft.asc" | tee /etc/yum.repos.d/azure-cli.repo \
   && microdnf install azure-cli \
   && az version
-
-USER app
 
 ENTRYPOINT ["/bin/harness-terraform"]
