@@ -79,7 +79,7 @@ pipeline:
                   timeout: 10m
                   spec:
                     command: init
-                    connectorRef: account.dockerhub
+                    connectorRef: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.spec.connectorRef>
                     image: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].imageName>:<+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].tag>
               - step:
                   type: IACMOpenTofuPlugin
@@ -88,7 +88,7 @@ pipeline:
                   timeout: 10m
                   spec:
                     command: plan
-                    connectorRef: account.dockerhub
+                    connectorRef: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.spec.connectorRef>
                     image: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].imageName>:<+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].tag>
               - step:
                   type: IACMOpenTofuPlugin
@@ -97,7 +97,7 @@ pipeline:
                   timeout: 10m
                   spec:
                     command: apply
-                    connectorRef: account.dockerhub
+                    connectorRef: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.spec.connectorRef>
                     image: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].imageName>:<+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].tag>
         tags: {}
     - stage:
