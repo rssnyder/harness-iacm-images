@@ -80,7 +80,7 @@ pipeline:
                   spec:
                     command: init
                     connectorRef: account.dockerhub
-                    image: rssnyder/harness_terraform:dev
+                    image: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].imageName>:<+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].tag>
               - step:
                   type: IACMOpenTofuPlugin
                   name: plan
@@ -89,7 +89,7 @@ pipeline:
                   spec:
                     command: plan
                     connectorRef: account.dockerhub
-                    image: rssnyder/harness_terraform:dev
+                    image: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].imageName>:<+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].tag>
               - step:
                   type: IACMOpenTofuPlugin
                   name: apply
@@ -98,7 +98,7 @@ pipeline:
                   spec:
                     command: apply
                     connectorRef: account.dockerhub
-                    image: rssnyder/harness_terraform:dev
+                    image: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].imageName>:<+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].tag>
         tags: {}
     - stage:
         name: custom images
