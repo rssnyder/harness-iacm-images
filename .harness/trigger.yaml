@@ -1,0 +1,14 @@
+inputSet:
+  name: trigger
+  identifier: trigger
+  orgIdentifier: default
+  projectIdentifier: iacm
+  pipeline:
+    identifier: build_custom_images
+    properties:
+      ci:
+        codebase:
+          build:
+            type: branch
+            spec:
+              branch: <+trigger.branch>
