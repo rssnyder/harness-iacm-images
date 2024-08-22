@@ -26,4 +26,6 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc" | tee /etc/yum.repos.d
   && microdnf install azure-cli \
   && az version
 
+USER app
+
 ENTRYPOINT ["/bin/harness-terraform"]
