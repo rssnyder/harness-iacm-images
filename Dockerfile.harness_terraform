@@ -5,6 +5,19 @@ FROM $SOURCE_IMAGE:$SOURCE_TAG
 
 USER root
 
+# install terraform
+RUN curl -LO  https://releases.hashicorp.com/terraform/1.3.1/terraform_1.5.0_linux_amd64.zip \
+  && unzip -q terraform_1.5.0_linux_amd64.zip \
+  && mv ./terraform /usr/bin/ \
+  && terraform --version
+
+# install opentofu
+RUN https://github.com/opentofu/opentofu/releases/download/v1.8.2/tofu_1.8.2_linux_amd64.tar.gz
+RUN curl -LO  https://github.com/opentofu/opentofu/releases/download/v1.8.2/tofu_1.8.2_linux_amd64.tar.gz \
+  && tar zxf tofu_1.8.2_linux_amd64.tar.gz \
+  && mv ./tofu /usr/bin/ \
+  && tofu --version
+
 # install aws cli
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
   && unzip -q awscliv2.zip \
