@@ -5,6 +5,18 @@ FROM $SOURCE_IMAGE:$SOURCE_TAG
 
 USER root
 
+# install terraform; this will override the version set on any workspace, and use this specific binary
+RUN curl -LO https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip \
+  && unzip -q terraform_1.5.7_linux_amd64.zip \
+  && mv ./terraform /usr/local/bin/ \
+  && terraform --version
+
+# install opentofu; this will override the version set on any workspace, and use this specific binary
+RUN curl -LO https://github.com/opentofu/opentofu/releases/download/v1.8.2/tofu_1.8.2_linux_amd64.tar.gz \
+  && tar zxf tofu_1.8.2_linux_amd64.tar.gz \
+  && mv ./tofu /usr/local/bin/ \
+  && tofu --version
+
 # install aws cli
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
   && unzip -q awscliv2.zip \
