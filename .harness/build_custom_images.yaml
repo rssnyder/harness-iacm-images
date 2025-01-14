@@ -122,7 +122,7 @@ pipeline:
                       EOF
                   when:
                     stageStatus: Success
-                    condition: (<+pipeline.branch> == "main") && (<+pipeline.properties.ci.codebase.build.spec.branch> == "main")
+                    condition: (<+pipeline.branch> == "main") && (<+pipeline.properties.ci.codebase.build.spec.branch> == "main") && false
           caching:
             enabled: false
             paths: []
