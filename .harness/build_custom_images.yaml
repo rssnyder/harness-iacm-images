@@ -6,6 +6,101 @@ pipeline:
   tags: {}
   stages:
     - stage:
+        name: build terraform dev
+        identifier: build_terraform_dev
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: get defaults
+                  identifier: get_defaults
+                  spec:
+                    connectorRef: account.dockerhub
+                    image: curlimages/curl
+                    shell: Sh
+                    command: |-
+                      export RESULT=$(curl \
+                      -H 'x-api-key: <+secrets.getValue("account.api")>' \
+                      'https://app.harness.io/gateway/iacm-manager/execution-config/get-default-config?accountIdentifier=<+account.identifier>&infra=k8')
+                    outputVariables:
+                      - name: RESULT
+              - step:
+                  type: BuildAndPushDockerRegistry
+                  name: build dev
+                  identifier: build_dev
+                  spec:
+                    connectorRef: account.dockerhub
+                    repo: rssnyder/harness_terraform
+                    tags:
+                      - dev
+                    dockerfile: Dockerfile.harness_terraform
+                    buildArgs:
+                      SOURCE_IMAGE: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.iacmTerraform.split(":")[0]>
+                      SOURCE_TAG: <+json.object(<+execution.steps.get_defaults.output.outputVariables.RESULT>).data.iacmTerraform.split(":")[1]>
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+    - stage:
+        name: test
+        identifier: test
+        description: ""
+        type: IACM
+        spec:
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: account._lab
+              namespace: iacm
+              volumes: []
+              annotations: {}
+              labels: {}
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              containerSecurityContext:
+                capabilities:
+                  drop: []
+                  add: []
+              os: Linux
+              hostNames: []
+          workspace: nonsense
+          execution:
+            steps:
+              - step:
+                  type: IACMOpenTofuPlugin
+                  name: init
+                  identifier: init
+                  timeout: 10m
+                  spec:
+                    command: init
+                    connectorRef: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.spec.connectorRef>
+                    image: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].imageName>:<+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].tag>
+              - step:
+                  type: IACMOpenTofuPlugin
+                  name: plan
+                  identifier: plan
+                  timeout: 10m
+                  spec:
+                    command: plan
+                    connectorRef: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.spec.connectorRef>
+                    image: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].imageName>:<+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].tag>
+              - step:
+                  type: IACMOpenTofuPlugin
+                  name: apply
+                  identifier: apply
+                  timeout: 10m
+                  spec:
+                    command: apply
+                    connectorRef: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.spec.connectorRef>
+                    image: <+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].imageName>:<+pipeline.stages.build_terraform_dev.spec.execution.steps.build_dev.artifact_build_dev.stepArtifacts.publishedImageArtifacts[0].tag>
+        tags: {}
+    - stage:
         name: custom images
         identifier: custom_images
         description: ""
@@ -126,12 +221,8 @@ pipeline:
           caching:
             enabled: false
             paths: []
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Cloud
-            spec: {}
+          infrastructure:
+            useFromStage: build_terraform_dev
         variables:
           - name: internal_repo
             type: String
